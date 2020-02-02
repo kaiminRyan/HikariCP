@@ -23,7 +23,7 @@ import java.sql.Wrapper;
 
 /**
  * This is the proxy class for java.sql.ResultSet.
- *
+ *  这个类对相关操作增加了执行记录 connection.markCommitStateDirty()
  * @author Brett Wooldridge
  */
 public abstract class ProxyResultSet implements ResultSet

@@ -70,9 +70,11 @@ public abstract class ProxyStatement implements Statement
       }
 
       isClosed = true;
+      //移除缓存
       connection.untrackStatement(delegate);
 
       try {
+         //代理关闭
          delegate.close();
       }
       catch (SQLException e) {
@@ -107,8 +109,11 @@ public abstract class ProxyStatement implements Statement
    @Override
    public ResultSet executeQuery(String sql) throws SQLException
    {
+      //记录执行
       connection.markCommitStateDirty();
+      //调用执行方法
       ResultSet resultSet = delegate.executeQuery(sql);
+      //生成代理的resultSet
       return ProxyFactory.getProxyResultSet(connection, this, resultSet);
    }
 

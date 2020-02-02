@@ -162,11 +162,13 @@ public abstract class ProxyConnection implements Connection
       return sqle;
    }
 
+   //移除statement
    final void untrackStatement(final Statement statement)
    {
       openStatements.remove(statement);
    }
 
+   //用于标识连接被访问或者存在可提交de数据
    final void markCommitStateDirty()
    {
       if (isAutoCommit) {
@@ -182,6 +184,7 @@ public abstract class ProxyConnection implements Connection
       leakTask.cancel();
    }
 
+   //缓存statement
    private final <T extends Statement> T trackStatement(final T statement)
    {
       openStatements.add(statement);
@@ -189,6 +192,7 @@ public abstract class ProxyConnection implements Connection
       return statement;
    }
 
+   //关闭全部打开的statement，只有在close方法中调用
    private final void closeStatements()
    {
       final int size = openStatements.size();
@@ -224,12 +228,14 @@ public abstract class ProxyConnection implements Connection
          leakTask.cancel();
 
          try {
+            //如果存在提交数据且不是自动提交,则回滚重置数据
             if (isCommitStateDirty && !isAutoCommit && !isReadOnly) {
                delegate.rollback();
                lastAccess = clockSource.currentTime();
                LOGGER.debug("{} - Executed rollback on connection {} due to dirty commit state on close().", poolEntry.getPoolName(), delegate);
             }
 
+            //如果存在设置变更位,则进行重置
             if (dirtyBits != 0) {
                poolEntry.resetConnectionState(this, dirtyBits);
                lastAccess = clockSource.currentTime();
@@ -244,7 +250,9 @@ public abstract class ProxyConnection implements Connection
             }
          }
          finally {
+            //代理置为关闭连接
             delegate = ClosedConnection.CLOSED_CONNECTION;
+            //回收poolEntry,如果poolentry已经被关闭或者remove，则由下一个线程丢弃或者threadlocal中无引用被回收
             poolEntry.recycle(lastAccess);
          }
       }
@@ -345,8 +353,10 @@ public abstract class ProxyConnection implements Connection
    @Override
    public void commit() throws SQLException
    {
+      //调用commit方法
       delegate.commit();
       isCommitStateDirty = false;
+      //更新时间
       lastAccess = clockSource.currentTime();
    }
 
